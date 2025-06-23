@@ -1,17 +1,17 @@
+FROM ubuntu:latest AS build
+LABEL authors="breno.santos"
 
-FROM maven:3.9.4-eclipse-temurin-17 AS build
-WORKDIR /app
+RUN apt-get update
+RUN apt-get install openjdk-17-jdk -y
+COPY . .
 
-COPY pom.xml .
-COPY src ./src
+RUN apt-get install maven -y
+RUN mvn clean install quarkus:build
 
-RUN mvn clean package -DskipTests
-
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-
-COPY --from=build /app/target/demo-1.0-SNAPSHOT-runner.jar app.jar
+FROM openjdk:17-jdk-slim
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dquarkus.profile=prod", "-jar", "app.jar"]
+COPY --from=build /target/produtos-runner.jar app.jar
+
+ENTRYPOINT [ "java", "-jar", "app.jar" ]
